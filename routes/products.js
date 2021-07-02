@@ -1,6 +1,6 @@
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
-const { Product, validateProduct } = require("../models/product");
+const { Product, validateProduct, validateProductGet } = require("../models/product");
 const mongoose = require("mongoose");
 mongoose.set("useNewUrlParser", true);
 mongoose.set("useUnifiedTopology", true);
@@ -9,7 +9,11 @@ const express = require("express");
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-  const products = await Product.find();
+
+  const { error } = validateProductGet(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+
+  const products = await Product.find();// find({category:req.body.category});
   res.send(products);
 });
 
@@ -19,14 +23,15 @@ router.get("/categories", async (req, res) => {
 });
 
 router.get("/:id", async (req, res) => {
+ // var id = mongoose.Types.ObjectId(req.params.id);
   const product = await Product.findById(req.params.id);
 
   if (!product)
-    return res.status(404).send("The product with the given ID was not found.");
+    return res.status(404).send(`No Product found for ID ${req.params.id}`);
   res.send(product);
 });
 
-router.post("/", auth, async (req, res) => {
+router.post("/", [auth,admin], async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -44,7 +49,7 @@ router.post("/", auth, async (req, res) => {
   res.send(product);
 });
 
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", [auth,admin] , async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -58,12 +63,19 @@ router.put("/:id", auth, async (req, res) => {
       manufacturer: req.body.manufacturer,
       availableItems: req.body.availableItems,
       imageURL: req.body.imageURL,
+      createdAt: req.body.createdAt,
+      updatedAt: req.body.updatedAt
     },
     { new: true }
   );
   if (!product)
     return res.status(404).send("The product with the given id not found");
-  res.send(product);
+  res.send({
+    productId: product._id,
+    name:product.name,category:product.category,
+    price:product.price, description:product.description,
+    manufacturer:product.manufacturer,availableItems:product.availableItems,
+    createdAt: product.createdAt,updatedAt:product.updatedAt});
 });
 
 router.delete("/:id", [auth, admin], async (req, res) => {

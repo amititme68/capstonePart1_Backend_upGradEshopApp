@@ -18,7 +18,8 @@ router.post("/", async (req, res) => {
   if (!validPassword) return res.status(400).send("Invalid Credentials!");
 
   const token = user.generateAuthToken();
-  res.send(token);
+  res.header("x-auth-token", token);
+  res.send({email:user.email, name: user.firstName+" "+user.lastName, isAuthenticated:true});
 });
 
 // Below we are confirming that email and password is sent by user in request
