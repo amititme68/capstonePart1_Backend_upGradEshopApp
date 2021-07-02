@@ -1,5 +1,6 @@
 const auth = require("../middleware/auth");
 const { Order, validateOrder } = require("../models/order");
+const { User, validate } = require("../models/user");
 const { Address } = require("../models/address");
 const { Product } = require("../models/product");
 const mongoose = require("mongoose");
@@ -16,6 +17,10 @@ const router = express.Router();
 router.post("/", [auth, adminForOrders], async (req, res) => {
   const { error } = validateOrder(req.body);
   if (error) return res.status(400).send(error.details[0].message);
+
+  // req.user is taken from auth module when user is logged in
+  const user = await User.findById(req.user._id).select('-isAdmin -__v');
+  if (!user) return res.status(400).send('Invalid user.');
 
   const product = await Product.findById(req.body.productId);
   if (!product)
@@ -65,7 +70,7 @@ router.post("/", [auth, adminForOrders], async (req, res) => {
       .populate("address", "-__v")
       .populate("product", "-__v")
       .select("product address quantity");
-    res.send({ order, amount, orderDate });
+    res.send({user, product,address, amount, orderDate });
   } catch (ex) {
     res.status(500).send("Something Failed!");
   }

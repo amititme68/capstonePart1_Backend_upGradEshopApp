@@ -1,8 +1,11 @@
 const Joi = require("joi");
+Joi.objectId = require('joi-objectid')(Joi);
 const { User, validate } = require("../models/user");
+//const {userSchema} = require('./user');
 const mongoose = require("mongoose");
 mongoose.set("useNewUrlParser", true);
 mongoose.set("useUnifiedTopology", true);
+
 
 const addressSchema = new mongoose.Schema({
   name: String,
@@ -20,10 +23,10 @@ const addressSchema = new mongoose.Schema({
     type: Date,
     default: Date.now(),
   },
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
+  user : {
+    type : mongoose.Schema.Types.ObjectId,
+    ref : 'User'
+  }
 });
 
 const Address = mongoose.model("Address", addressSchema);
@@ -37,6 +40,7 @@ function validateAddress(address) {
     contactNumber: Joi.number().min(10).required(),
     landmark: Joi.string().min(3).optional(),
     zipCode: Joi.number().min(6).required(),
+   // user: Joi.objectId().required(),
   };
   return Joi.validate(address, schema); // change the type
 }
