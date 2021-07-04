@@ -1,7 +1,6 @@
 const Joi = require("joi");
 Joi.objectId = require('joi-objectid')(Joi);
 const { User, validate } = require("../models/user");
-//const {userSchema} = require('./user');
 const mongoose = require("mongoose");
 mongoose.set("useNewUrlParser", true);
 mongoose.set("useUnifiedTopology", true);
@@ -39,8 +38,11 @@ function validateAddress(address) {
     street: Joi.string().min(3).required(),
     contactNumber: Joi.number().min(10).required(),
     landmark: Joi.string().min(3).optional(),
-    zipCode: Joi.number().min(6).required(),
-   // user: Joi.objectId().required(),
+    zipCode: Joi.number().min(100000).max(999999).required().error(() => {
+      return {
+        message: "Invalid zip code!",
+      };
+    })
   };
   return Joi.validate(address, schema); // change the type
 }

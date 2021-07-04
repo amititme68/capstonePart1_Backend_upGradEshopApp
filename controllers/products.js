@@ -1,6 +1,6 @@
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
-const { Product, validateProduct, validateProductGet } = require("../models/product");
+const {Product,validateProduct,validateProductGet} = require("../models/product");
 const mongoose = require("mongoose");
 mongoose.set("useNewUrlParser", true);
 mongoose.set("useUnifiedTopology", true);
@@ -9,21 +9,27 @@ const express = require("express");
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-
-  const { error } = validateProductGet(req.body);
+  const { error } = validateProductGet(req.query);
   if (error) return res.status(400).send(error.details[0].message);
 
-  const products = await Product.find();// find({category:req.body.category});
+  // if no query is passed as part of url then default values will be taken
+  if(!req.query.category && !req.query.name){
+    let products = await Product.find().sort('-_id');
+    res.send(products);
+    return;
+  }
+  const direction = req.query.direction === "ASC" ? +1 : -1;
+  let products = await Product.find().or([{ name: req.query.name },{ category: req.query.category }])
+    .sort({ price: direction });
   res.send(products);
 });
 
 router.get("/categories", async (req, res) => {
-  const products = await Product.find().select("category").select("-_id");
+  const products = await Product.find().select("category").distinct("category");
   res.send(products);
 });
 
 router.get("/:id", async (req, res) => {
- // var id = mongoose.Types.ObjectId(req.params.id);
   const product = await Product.findById(req.params.id);
 
   if (!product)
@@ -31,7 +37,7 @@ router.get("/:id", async (req, res) => {
   res.send(product);
 });
 
-router.post("/", [auth,admin], async (req, res) => {
+router.post("/", [auth, admin], async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -49,7 +55,7 @@ router.post("/", [auth,admin], async (req, res) => {
   res.send(product);
 });
 
-router.put("/:id", [auth,admin] , async (req, res) => {
+router.put("/:id", [auth, admin], async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -64,7 +70,7 @@ router.put("/:id", [auth,admin] , async (req, res) => {
       availableItems: req.body.availableItems,
       imageURL: req.body.imageURL,
       createdAt: req.body.createdAt,
-      updatedAt: req.body.updatedAt
+      updatedAt: req.body.updatedAt,
     },
     { new: true }
   );
@@ -72,10 +78,15 @@ router.put("/:id", [auth,admin] , async (req, res) => {
     return res.status(404).send("The product with the given id not found");
   res.send({
     productId: product._id,
-    name:product.name,category:product.category,
-    price:product.price, description:product.description,
-    manufacturer:product.manufacturer,availableItems:product.availableItems,
-    createdAt: product.createdAt,updatedAt:product.updatedAt});
+    name: product.name,
+    category: product.category,
+    price: product.price,
+    description: product.description,
+    manufacturer: product.manufacturer,
+    availableItems: product.availableItems,
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+  });
 });
 
 router.delete("/:id", [auth, admin], async (req, res) => {
