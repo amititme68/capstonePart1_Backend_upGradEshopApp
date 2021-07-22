@@ -37,7 +37,7 @@ router.get("/:id", async (req, res) => {
   res.send(product);
 });
 
-router.post("/", [auth, admin], async (req, res) => {
+router.post("/addProduct", [auth, admin], async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -55,7 +55,7 @@ router.post("/", [auth, admin], async (req, res) => {
   res.send(product);
 });
 
-router.put("/:id", [auth, admin], async (req, res) => {
+router.put("/:id", [auth,admin], async (req, res) => {
   const { error } = validateProduct(req.body);
   if (error) return res.status(400).send(error.details[0].message);
 
@@ -89,7 +89,7 @@ router.put("/:id", [auth, admin], async (req, res) => {
   });
 });
 
-router.delete("/:id", [auth, admin], async (req, res) => {
+router.delete("/:id", [auth,admin], async (req, res) => {
   const product = await Product.findByIdAndRemove(req.params.id);
 
   if (!product)
